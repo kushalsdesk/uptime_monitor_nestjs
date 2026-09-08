@@ -4,6 +4,7 @@ import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
 import { MonitorsModule } from './monitors/monitors.module.js';
 import { UsersModule } from './users/users.module.js';
+import { TypeOrmModule } from '@nestjs/typeorm';
 
 export const { ObserveModule, ObserveInstrument } = createObserveModule();
 
@@ -15,6 +16,17 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
       appKey: 'YOUR_APP_KEY',
       appSecret: 'YOUR_APP_SECRET',
       serviceId: 'uptime_monitor_nestjs',
+    }),
+    TypeOrmModule.forRoot({
+      type: "postgres",
+      host: "localhost",
+      port: 5432,
+      username: "postgres",
+      password:"postgres",
+      database: 'uptime_monitor_db',
+      autoLoadEntities: true,
+      synchronize: true,
+      logging:true
     }),
     MonitorsModule,
     UsersModule,

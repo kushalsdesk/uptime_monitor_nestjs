@@ -2,7 +2,9 @@ import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/commo
 import { MonitorsService } from './monitors.service.js';
 import { CreateMonitorDto } from './dto/create-monitor.dto.js';
 import { UpdateMonitorDto } from './dto/update-monitor.dto.js';
+import { ApiTags } from '@nestjs/swagger';
 
+@ApiTags('monitors')
 @Controller('monitors')
 export class MonitorsController {
   constructor(private readonly monitorsService: MonitorsService) {}
@@ -19,16 +21,16 @@ export class MonitorsController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.monitorsService.findOne(+id);
+    return this.monitorsService.findOne(id);
   }
 
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateMonitorDto: UpdateMonitorDto) {
-    return this.monitorsService.update(+id, updateMonitorDto);
+    return this.monitorsService.update(id, updateMonitorDto);
   }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.monitorsService.remove(+id);
+    return this.monitorsService.remove(id);
   }
 }
