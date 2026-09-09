@@ -1,4 +1,14 @@
-import { Column, Entity, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from "typeorm";
+import {
+  Column,
+  Entity,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+  OneToOne,
+  OneToMany
+} from "typeorm";
+import { Check } from "./check.entity.js";
+import { Incident } from "./incident.entity.js";
 
 export enum MonitorType{
   HTTP = "HTTP",
@@ -37,4 +47,10 @@ export class Monitor {
 
   @UpdateDateColumn()
   updatedAt:Date
+
+  @OneToMany(()=>Check,(check)=>check.monitor)
+  checks:Check[]
+
+  @OneToMany(()=>Incident, (incident)=>incident.monitor)
+  incidents:Incident[]
 }
