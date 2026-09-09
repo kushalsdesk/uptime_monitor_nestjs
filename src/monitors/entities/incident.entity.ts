@@ -1,4 +1,4 @@
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, type Relation } from "typeorm";
 import { Monitor } from "./monitor.entity.js";
 
 export enum IncidentStatus{
@@ -29,5 +29,5 @@ export class Incident{
 
   @ManyToOne(()=>Monitor, (monitor)=>monitor.incidents, {onDelete:'CASCADE'})
   @JoinColumn({name:'monitor_id'})
-  monitor:Monitor
+  monitor:Relation<Monitor>
 }
