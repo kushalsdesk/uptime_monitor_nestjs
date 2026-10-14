@@ -5,6 +5,8 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthController } from './auth.controller.js';
 import { AuthService } from './auth.service.js';
 import { UsersModule } from '../users/users.module.js';
+import { JwtStrategy } from './strategies/jwt.strategy.js';
+import { JwtAuthGuard } from './guards/jwt-auth.guard.js';
 
 @Module({
   imports: [
@@ -14,7 +16,10 @@ import { UsersModule } from '../users/users.module.js';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_SECRET', 'dev-jwt-secret-key-change-in-production-super-secure-min-32-chars'),
+        secret: configService.get<string>(
+          'JWT_SECRET',
+          'dev-jwt-secret-key-change-in-production-super-secure-min-32-chars',
+        ),
         signOptions: {
           expiresIn: (configService.get<string>('JWT_EXPIRES_IN', '7d') || '7d') as any,
         },
@@ -22,7 +27,7 @@ import { UsersModule } from '../users/users.module.js';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService],
-  exports: [AuthService, JwtModule, PassportModule],
+  providers: [AuthService, JwtStrategy, JwtAuthGuard],
+  exports: [AuthService, JwtModule, PassportModule, JwtStrategy, JwtAuthGuard],
 })
 export class AuthModule {}
