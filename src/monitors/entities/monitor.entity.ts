@@ -5,10 +5,13 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   OneToMany,
+  ManyToOne,
+  JoinColumn,
   type Relation,
 } from 'typeorm';
 import { Check } from './check.entity.js';
 import { Incident } from './incident.entity.js';
+import { User } from '../../users/entities/user.entity.js';
 
 export enum MonitorType {
   HTTP = 'HTTP',
@@ -45,6 +48,11 @@ export class Monitor {
 
   @UpdateDateColumn({ type: 'timestamptz' })
   updatedAt: Date;
+
+  // Many Monitors belong to One User
+  @ManyToOne(() => User, (user) => user.monitors, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'user_id' })
+  user: Relation<User>;
 
   @OneToMany(() => Check, (check) => check.monitor)
   checks: Relation<Check>[];
