@@ -8,26 +8,28 @@ async function bootstrap() {
     instrument: ObserveInstrument,
   });
 
-  // enable Global Validation Pipe
+  // Enable Global Validation Pipe
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
       forbidNonWhitelisted: true,
-      transform:true
+      transform: true,
     }),
-  )
+  );
 
-  // swagger openAPI DOCS UI
+  // Swagger OpenAPI Docs UI with Bearer Auth
   const config = new DocumentBuilder()
-    .setTitle("Uptime & Status Monitor API")
-    .setDescription("Production-grade API for self-hosted website & API monitoring")
-    .setVersion("1.0")
-    .addTag("monitors")
-    .build()
+    .setTitle('Uptime & Status Monitor API')
+    .setDescription('Production-grade API for self-hosted website & API monitoring')
+    .setVersion('1.0')
+    .addBearerAuth()
+    .addTag('auth', 'Authentication & account registration')
+    .addTag('monitors', 'Monitor management (Protected with JWT)')
+    .addTag('users', 'User profile operations')
+    .build();
 
-  const document = SwaggerModule.createDocument(app, config)
-  SwaggerModule.setup("api/docs", app, document)
-
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api/docs', app, document);
 
   await app.listen(process.env.PORT ?? 3000);
   console.log(`🚀 Server running on http://localhost:3000`);
