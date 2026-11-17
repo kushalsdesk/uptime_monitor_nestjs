@@ -23,6 +23,14 @@ export class UsersService {
     return await this.userRepository.findOneBy({ email });
   }
 
+  // later fix
+  async findByEmailWithPassword(email: string): Promise<User | null> {
+    return await this.userRepository
+      .createQueryBuilder('user')
+      .addSelect('user.passwordHash') // Explicitly select the hidden column
+      .where('user.email = :email', { email })
+      .getOne();
+  }
   // 3. Lookup user by UUID (Used in Passport JWT Strategy)
   async findById(id: string): Promise<User | null> {
     return await this.userRepository.findOneBy({ id });

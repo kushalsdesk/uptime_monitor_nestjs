@@ -20,7 +20,9 @@ export class AuthService {
   async register(registerDto: RegisterDto) {
     const existingUser = await this.usersService.findByEmail(registerDto.email);
     if (existingUser) {
-      throw new ConflictException('An account with this email address already exists');
+      throw new ConflictException(
+        'An account with this email address already exists',
+      );
     }
 
     const saltRounds = 10;
@@ -46,9 +48,12 @@ export class AuthService {
 
   // 2. User Authentication & JWT Issuance
   async login(loginDto: LoginDto) {
-    const user = await this.usersService.findByEmail(loginDto.email);
+    // 🚀 FIX: Use the new method that explicitly fetches the hash
+    const user = await this.usersService.findByEmailWithPassword(
+      loginDto.email,
+    );
+
     if (!user) {
-      // 🔒 Constant-time safe error: never reveal if email vs password failed
       throw new UnauthorizedException('Invalid email or password');
     }
 
