@@ -1,6 +1,7 @@
 import {
   Column,
   Entity,
+  Index,
   PrimaryGeneratedColumn,
   CreateDateColumn,
   UpdateDateColumn,
@@ -20,6 +21,8 @@ export enum MonitorType {
 }
 
 @Entity('monitors')
+@Index(['user'])
+@Index(['isActive'])
 export class Monitor {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -27,7 +30,7 @@ export class Monitor {
   @Column({ type: 'varchar', length: 150 })
   name: string;
 
-  @Column({ type: 'varchar', length: 500 })
+  @Column({ type: 'varchar', length: 2048 })
   url: string;
 
   @Column({
