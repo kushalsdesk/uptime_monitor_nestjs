@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { BullModule } from '@nestjs/bullmq';
 import { MonitorsService } from './monitors.service.js';
 import { MonitorsController } from './monitors.controller.js';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -10,11 +11,15 @@ import { HttpCheckStrategy } from './strategies/http-check.strategy.js';
 import { ApiCheckStrategy } from './strategies/api-check.strategy.js';
 import { PingCheckStrategy } from './strategies/ping-check.strategy.js';
 import { CheckStrategyResolver } from './strategies/check-strategy.resolver.js';
+import { CHECK_QUEUE } from './constants/queue.constants.js';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Monitor, Check, Incident]),
     AuthModule,
+    BullModule.registerQueue({
+      name: CHECK_QUEUE,
+    }),
   ],
   controllers: [MonitorsController],
   providers: [
@@ -24,9 +29,6 @@ import { CheckStrategyResolver } from './strategies/check-strategy.resolver.js';
     PingCheckStrategy,
     CheckStrategyResolver,
   ],
-  exports: [
-    MonitorsService,
-    CheckStrategyResolver,
-  ],
+  exports: [MonitorsService, CheckStrategyResolver, BullModule],
 })
 export class MonitorsModule {}
