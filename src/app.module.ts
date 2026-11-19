@@ -6,6 +6,7 @@ import { MonitorsModule } from './monitors/monitors.module.js';
 import { UsersModule } from './users/users.module.js';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from './auth/auth.module.js';
+import { BullModule } from '@nestjs/bullmq';
 
 @Module({
   imports: [
@@ -33,6 +34,28 @@ import { AuthModule } from './auth/auth.module.js';
           synchronize: !isProd,
           ssl: isProd ? { rejectUnauthorized: false } : false,
           logging: ['error'],
+        };
+      },
+    }),
+
+    BullModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => {
+        const redisUrl = configService.get<string>('REDIS_URL');
+        if (redisUrl) {
+          return {
+            connection: {
+              url: redisUrl,
+            },
+          };
+        }
+        return {
+          connection: {
+            host: configService.get<string>('REDIS_HOST', 'localhost'),
+            port: configService.get<number>('REDIS_PORT', 6379),
+            password: configService.get<string>('REDIS_PASSWORD') || undefined,
+          },
         };
       },
     }),
