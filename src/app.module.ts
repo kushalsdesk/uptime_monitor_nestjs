@@ -30,7 +30,7 @@ import { AuthModule } from './auth/auth.module.js';
             : configService.get<string>('DB_PASSWORD'),
           database: isProd ? undefined : configService.get<string>('DB_NAME'),
           autoLoadEntities: true,
-          synchronize: true,
+          synchronize: !isProd,
           ssl: isProd ? { rejectUnauthorized: false } : false,
           logging: ['error'],
         };
