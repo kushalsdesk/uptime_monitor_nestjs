@@ -14,18 +14,27 @@ import { AuthModule } from './auth/auth.module.js';
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
-        type: 'postgres',
-        host: configService.get<string>('DB_HOST'),
-        port: configService.get<number>('DB_PORT'),
-        username: configService.get<string>('DB_USERNAME'),
-        password: configService.get<string>('DB_PASSWORD'),
-        database: configService.get<string>('DB_NAME'),
-        autoLoadEntities: true,
-        synchronize: false,
-        logging:
-          configService.get('NODE_ENV') === 'development' ? true : ['error'],
-      }),
+      useFactory: (configService: ConfigService) => {
+        const isProd = configService.get('NODE_ENV') === 'production';
+        return {
+          type: 'postgres',
+          // 🚀 Use DATABASE_URL in production (Neon), fallback to local vars in dev
+          url: isProd ? configService.get<string>('DATABASE_URL') : undefined,
+          host: isProd ? undefined : configService.get<string>('DB_HOST'),
+          port: isProd ? undefined : configService.get<number>('DB_PORT'),
+          username: isProd
+            ? undefined
+            : configService.get<string>('DB_USERNAME'),
+          password: isProd
+            ? undefined
+            : configService.get<string>('DB_PASSWORD'),
+          database: isProd ? undefined : configService.get<string>('DB_NAME'),
+          autoLoadEntities: true,
+          synchronize: true,
+          ssl: isProd ? { rejectUnauthorized: false } : false,
+          logging: ['error'],
+        };
+      },
     }),
     MonitorsModule,
     UsersModule,
