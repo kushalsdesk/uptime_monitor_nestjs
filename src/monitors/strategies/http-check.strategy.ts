@@ -9,17 +9,17 @@ export class HttpCheckStrategy implements CheckStrategy {
   async execute(monitor: Monitor): Promise<CheckResult> {
     const startTime = performance.now();
     const controller = new AbortController();
-    const timeoutMs = 10000; // 10-second timeout
+    const timeoutMs = 10000;
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
     try {
       const response = await fetch(monitor.url, {
         method: 'GET',
         signal: controller.signal,
-        headers: {
-          'User-Agent': 'UptimeMonitor/1.0 (HealthChecker)',
-        },
+        headers: { 'User-Agent': 'UptimeMonitor/1.0 (HealthChecker)' },
       });
+
+      await response.body?.cancel();
 
       const responseTimeMs = Math.round(performance.now() - startTime);
       const statusCode = response.status;
@@ -29,14 +29,16 @@ export class HttpCheckStrategy implements CheckStrategy {
         statusCode,
         responseTimeMs,
         isUp,
-        errorMessage: isUp ? null : `HTTP check failed with status ${statusCode}`,
+        errorMessage: isUp
+          ? null
+          : `HTTP check failed with status ${statusCode}`,
       };
     } catch (error: any) {
       const responseTimeMs = Math.round(performance.now() - startTime);
       const isTimeout = error.name === 'AbortError';
 
       return {
-        statusCode: 0,
+        statusCode: null,
         responseTimeMs,
         isUp: false,
         errorMessage: isTimeout

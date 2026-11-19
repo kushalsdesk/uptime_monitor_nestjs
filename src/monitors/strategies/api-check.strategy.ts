@@ -17,11 +17,12 @@ export class ApiCheckStrategy implements CheckStrategy {
         method: 'GET',
         signal: controller.signal,
         headers: {
-          'Accept': 'application/json',
+          Accept: 'application/json',
           'User-Agent': 'UptimeMonitor-API/1.0',
         },
       });
 
+      await response.body?.cancel();
       const responseTimeMs = Math.round(performance.now() - startTime);
       const statusCode = response.status;
       // In APIs, 2xx (200 OK, 201 Created, etc.) is considered healthy
@@ -31,14 +32,16 @@ export class ApiCheckStrategy implements CheckStrategy {
         statusCode,
         responseTimeMs,
         isUp,
-        errorMessage: isUp ? null : `API returned unexpected status code ${statusCode}`,
+        errorMessage: isUp
+          ? null
+          : `API returned unexpected status code ${statusCode}`,
       };
     } catch (error: any) {
       const responseTimeMs = Math.round(performance.now() - startTime);
       const isTimeout = error.name === 'AbortError';
 
       return {
-        statusCode: 0,
+        statusCode: null,
         responseTimeMs,
         isUp: false,
         errorMessage: isTimeout

@@ -5,7 +5,7 @@ import { Monitor, MonitorType } from '../entities/monitor.entity.js';
  * Maps directly to our PostgreSQL `checks` table columns.
  */
 export interface CheckResult {
-  statusCode: number;
+  statusCode: number | null;
   responseTimeMs: number;
   isUp: boolean;
   errorMessage?: string | null;

@@ -22,6 +22,8 @@ export class PingCheckStrategy implements CheckStrategy {
         },
       });
 
+      await response.body?.cancel();
+
       const responseTimeMs = Math.round(performance.now() - startTime);
       const statusCode = response.status;
       // If the host responds with any valid HTTP status, the host is reachable
@@ -38,7 +40,7 @@ export class PingCheckStrategy implements CheckStrategy {
       const isTimeout = error.name === 'AbortError';
 
       return {
-        statusCode: 0,
+        statusCode: null,
         responseTimeMs,
         isUp: false,
         errorMessage: isTimeout
