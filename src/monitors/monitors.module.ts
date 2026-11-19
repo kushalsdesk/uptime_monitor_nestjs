@@ -12,6 +12,7 @@ import { ApiCheckStrategy } from './strategies/api-check.strategy.js';
 import { PingCheckStrategy } from './strategies/ping-check.strategy.js';
 import { CheckStrategyResolver } from './strategies/check-strategy.resolver.js';
 import { CHECK_QUEUE } from './constants/queue.constants.js';
+import { CheckProducerService } from './check-producer.service.js';
 
 @Module({
   imports: [
@@ -28,7 +29,13 @@ import { CHECK_QUEUE } from './constants/queue.constants.js';
     ApiCheckStrategy,
     PingCheckStrategy,
     CheckStrategyResolver,
+    CheckProducerService,
   ],
-  exports: [MonitorsService, CheckStrategyResolver, BullModule],
+  exports: [
+    MonitorsService,
+    CheckStrategyResolver,
+    CheckProducerService,
+    BullModule,
+  ],
 })
 export class MonitorsModule {}
