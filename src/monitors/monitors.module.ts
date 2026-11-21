@@ -36,6 +36,7 @@ import { CheckProducerService } from './check-producer.service.js';
     CheckStrategyResolver,
     CheckProducerService,
     BullModule,
+    TypeOrmModule,
   ],
 })
 export class MonitorsModule {}

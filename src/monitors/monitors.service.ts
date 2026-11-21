@@ -58,6 +58,15 @@ export class MonitorsService {
     return monitor;
   }
 
+  // 🚀 Step 5.4: Worker lookup method (bypasses userId filter since worker is system-level)
+  async findOneForWorker(id: string): Promise<Monitor> {
+    const monitor = await this.monitorRepository.findOneBy({ id });
+    if (!monitor) {
+      throw new NotFoundException(`Monitor with ID "${id}" not found`);
+    }
+    return monitor;
+  }
+
   async update(
     id: string,
     userId: string,

@@ -7,6 +7,7 @@ import { UsersModule } from './users/users.module.js';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from './auth/auth.module.js';
 import { BullModule } from '@nestjs/bullmq';
+import { WorkerModule } from './worker.module.js';
 
 @Module({
   imports: [
@@ -69,6 +70,8 @@ import { BullModule } from '@nestjs/bullmq';
     MonitorsModule,
     UsersModule,
     AuthModule,
+    // TODO: Remove WorkerModule when upgrading to a dedicated Background Worker on Render.
+    WorkerModule,
   ],
   controllers: [AppController],
   providers: [AppService],
