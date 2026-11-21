@@ -9,6 +9,4 @@ export const CHECK_JOB = 'execute-check';
  */
 export interface CheckJobData {
   monitorId: string;
-  url: string;
-  type: MonitorType;
 }

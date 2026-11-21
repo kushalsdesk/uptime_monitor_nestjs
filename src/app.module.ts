@@ -43,18 +43,25 @@ import { BullModule } from '@nestjs/bullmq';
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => {
         const redisUrl = configService.get<string>('REDIS_URL');
-        if (redisUrl) {
-          return {
-            connection: {
-              url: redisUrl,
-            },
-          };
-        }
+
+        const connection = redisUrl
+          ? { url: redisUrl }
+          : {
+              host: configService.get<string>('REDIS_HOST', 'localhost'),
+              port: configService.get<number>('REDIS_PORT', 6379),
+              password:
+                configService.get<string>('REDIS_PASSWORD') || undefined,
+              tls:
+                configService.get('NODE_ENV') === 'production'
+                  ? { rejectUnauthorized: false }
+                  : undefined,
+            };
+
         return {
           connection: {
-            host: configService.get<string>('REDIS_HOST', 'localhost'),
-            port: configService.get<number>('REDIS_PORT', 6379),
-            password: configService.get<string>('REDIS_PASSWORD') || undefined,
+            ...connection,
+            maxRetriesPerRequest: null,
+            retryStrategy: (times: number) => Math.min(times * 50, 2000),
           },
         };
       },

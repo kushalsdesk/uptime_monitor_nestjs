@@ -1,6 +1,13 @@
-import { Injectable, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  OnApplicationBootstrap,
+  OnApplicationShutdown,
+} from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import {
   CHECK_JOB,
   CHECK_QUEUE,
@@ -9,18 +16,37 @@ import {
 import { Monitor } from './entities/monitor.entity.js';
 
 @Injectable()
-export class CheckProducerService {
+export class CheckProducerService
+  implements OnApplicationBootstrap, OnApplicationShutdown
+{
   private readonly logger = new Logger(CheckProducerService.name);
 
   constructor(
     @InjectQueue(CHECK_QUEUE)
     private readonly checkQueue: Queue<CheckJobData>,
+    @InjectRepository(Monitor)
+    private readonly monitorRepository: Repository<Monitor>,
   ) {}
 
-  /**
-   * Schedules or updates a repeatable check job for an active monitor.
-   * If the monitor already has a scheduler, BullMQ updates its interval atomically.
-   */
+  async onApplicationBootstrap() {
+    this.logger.log('Bootstrapping BullMQ schedulers from PostgreSQL...');
+    const activeMonitors = await this.monitorRepository.find({
+      where: { isActive: true },
+    });
+
+    for (const monitor of activeMonitors) {
+      await this.scheduleMonitor(monitor);
+    }
+    this.logger.log(
+      `Synced ${activeMonitors.length} recurring jobs into Redis.`,
+    );
+  }
+
+  async onApplicationShutdown() {
+    await this.checkQueue.close();
+    this.logger.log('BullMQ Queue connection closed gracefully.');
+  }
+
   async scheduleMonitor(monitor: Monitor): Promise<void> {
     const intervalMs = monitor.intervalSec * 1000;
 
@@ -31,26 +57,19 @@ export class CheckProducerService {
         name: CHECK_JOB,
         data: {
           monitorId: monitor.id,
-          url: monitor.url,
-          type: monitor.type,
         },
         opts: {
-          removeOnComplete: true, // Discard completed jobs to preserve Redis memory
-          removeOnFail: 50,       // Retain last 50 failed jobs for debugging
+          removeOnComplete: true,
+          removeOnFail: 50,
         },
       },
     );
-
-    this.logger.log(
-      `Scheduled recurring check for monitor "${monitor.name}" (${monitor.id}) every ${monitor.intervalSec}s`,
-    );
   }
 
-  /**
-   * Removes the repeatable check scheduler from Redis (e.g. on monitor delete or pause).
-   */
   async removeMonitor(monitorId: string): Promise<void> {
     await this.checkQueue.removeJobScheduler(monitorId);
-    this.logger.log(`Removed recurring check scheduler for monitor ID: ${monitorId}`);
+    this.logger.log(
+      `Removed recurring check scheduler for monitor ID: ${monitorId}`,
+    );
   }
 }

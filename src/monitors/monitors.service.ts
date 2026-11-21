@@ -7,6 +7,7 @@ import { Check } from './entities/check.entity.js';
 import { Repository } from 'typeorm';
 import { CheckStrategyResolver } from './strategies/check-strategy.resolver.js';
 import { assertSafeUrl } from './utils/ssrf-guard.js';
+import { CheckProducerService } from './check-producer.service.js';
 
 @Injectable()
 export class MonitorsService {
@@ -16,6 +17,7 @@ export class MonitorsService {
     @InjectRepository(Check)
     private readonly checkRepository: Repository<Check>,
     private readonly strategyResolver: CheckStrategyResolver,
+    private readonly checkProducer: CheckProducerService,
   ) {}
 
   // 1. Create monitor scoped to authenticated user
@@ -29,7 +31,14 @@ export class MonitorsService {
       ...createMonitorDto,
       user: { id: userId } as any,
     });
-    return await this.monitorRepository.save(monitor);
+
+    const savedMonitor = await this.monitorRepository.save(monitor);
+
+    // Trigger the BullMQ producer
+    if (savedMonitor.isActive) {
+      await this.checkProducer.scheduleMonitor(savedMonitor);
+    }
+    return savedMonitor;
   }
 
   async findAll(userId: string): Promise<Monitor[]> {
@@ -67,6 +76,7 @@ export class MonitorsService {
   // 5. Delete monitor scoped to authenticated user
   async remove(id: string, userId: string): Promise<{ message: string }> {
     const monitor = await this.findOne(id, userId);
+    await this.checkProducer.removeMonitor(monitor.id);
     await this.monitorRepository.remove(monitor);
     return { message: `Monitor "${monitor.name}" successfully deleted` };
   }
