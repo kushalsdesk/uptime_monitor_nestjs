@@ -79,7 +79,14 @@ export class MonitorsService {
     }
 
     Object.assign(monitor, updateMonitorDto);
-    return await this.monitorRepository.save(monitor);
+    const savedMonitor = await this.monitorRepository.save(monitor);
+
+    if (savedMonitor.isActive) {
+      await this.checkProducer.scheduleMonitor(savedMonitor);
+    } else {
+      await this.checkProducer.removeMonitor(savedMonitor.id);
+    }
+    return savedMonitor;
   }
 
   // 5. Delete monitor scoped to authenticated user

@@ -24,28 +24,31 @@ export class CheckProcessor extends WorkerHost {
 
   async process(job: Job<CheckJobData>): Promise<void> {
     const { monitorId } = job.data;
-    this.logger.debug(`Processing recurring check for monitor ${monitorId}...`);
-
+    let monitor;
     try {
-      // 1. Fetch fresh monitor from database (bypass user ownership check)
-      const monitor = await this.monitorsService.findOneForWorker(monitorId);
-
-      // 2. If monitor is paused/inactive, skip check execution
-      if (!monitor.isActive) {
-        this.logger.debug(
-          `Monitor "${monitor.name}" (${monitor.id}) is paused (isActive=false). Skipping check.`,
+      monitor = await this.monitorsService.findOneForWorker(monitorId);
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        this.logger.warn(
+          `[WORKER] Monitor "${monitorId}" is deleted. Skipping.`,
         );
         return;
       }
+      throw error;
+    }
+    if (!monitor.isActive) {
+      this.logger.debug(
+        `[WORKER] Monitor "${monitor.name} is paused, Skipping."`,
+      );
+      return;
+    }
 
-      // 3. Defense in depth: Verify URL against SSRF
-      await assertSafeUrl(monitor.url);
+    //Execute the check
+    await assertSafeUrl(monitor.url);
+    const strategy = this.strategyResolver.resolve(monitor.type);
+    const result = await strategy.execute(monitor);
 
-      // 4. Resolve strategy and execute probe
-      const strategy = this.strategyResolver.resolve(monitor.type);
-      const result = await strategy.execute(monitor);
-
-      // 5. Persist time-series check record
+    try {
       const check = this.checkRepository.create({
         monitor: { id: monitor.id } as any,
         statusCode: result.statusCode,
@@ -53,25 +56,17 @@ export class CheckProcessor extends WorkerHost {
         isUp: result.isUp,
         errorMessage: result.errorMessage,
       });
-
       await this.checkRepository.save(check);
 
       this.logger.log(
-        `[Worker] Check completed for "${monitor.name}" - ${result.isUp ? 'UP' : 'DOWN'} (${result.responseTimeMs}ms, status: ${result.statusCode ?? 'N/A'})`,
+        `[WORKER] Check completed for "${monitor.name}" - ${result.isUp ? 'UP' : 'DOWN'} (${result.responseTimeMs}ms, status: ${result.statusCode ?? 'N/A'})`,
       );
     } catch (error: any) {
-      if (error instanceof NotFoundException) {
-        this.logger.warn(
-          `[Worker] Monitor ${monitorId} was deleted. Skipping check.`,
-        );
-        return;
-      }
-
-      // Log but DO NOT rethrow, so BullMQ does not infinitely retry dead endpoints
       this.logger.error(
-        `[Worker] Error executing check for monitor ${monitorId}: ${error.message}`,
+        `[WORKER] database save failed for "${monitorId}"`,
         error.stack,
       );
+      throw error;
     }
   }
 }
